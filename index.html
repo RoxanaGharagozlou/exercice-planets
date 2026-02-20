@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explore The Solar System</title>
+    <style>
+        :root {
+            /* Light Theme (Default, clear color harmony) */
+            --bg-color: #f8fafc;
+            --text-color: #0f172a;
+            --primary-color: #0ea5e9;
+            --primary-hover: #0284c7;
+            --accent-color: #f59e0b;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --modal-bg: #ffffff;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme */
+            --bg-color: #0b0f19;
+            --text-color: #f8fafc;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --modal-bg: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        section {
+            margin-bottom: 4rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        /* Planet Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            padding: 2rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .card {
+            position: relative;
+        }
+
+        .visited-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--success);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card.visited .visited-badge {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .progress-container {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: var(--bg-color);
+            border: 1px solid var(--card-border);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 0.75rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .planet-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem auto;
+            display: inline-block;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+
+        .card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: var(--modal-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-emoji {
+            font-size: 5rem;
+        }
+
+        .modal-stats {
+            margin-top: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat-box {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--card-border);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 0.25rem;
+        }
+
+        /* Quiz Styles */
+        .quiz-container {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .question {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .option-btn {
+            background: var(--bg-color);
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            font-size: 1rem;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .option-btn.correct {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .option-btn.wrong {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .quiz-footer {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            font-weight: bold;
+            display: none;
+        }
+
+        .next-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .score-display {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2rem; }
+            .modal-header { flex-direction: column; text-align: center; }
+            .grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🌌 Solar System</h1>
+            <button class="theme-toggle" id="themeToggle">
+                <span>🌙 Dark Mode</span>
+            </button>
+        </header>
+
+        <div class="progress-container" id="progressSection">
+            <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                <span>Exploration Progress</span>
+                <span id="progressText">0 / 9 Planets</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="completionMessage" style="color: var(--success); font-weight: bold; margin-top: 1rem; text-align: center; display: none; font-size: 1.1rem;">
+                🎉 Master Explorer! You've discovered all the planets! 🎉
+            </p>
+        </div>
+
+        <section id="intro">
+            <h2>Our Cosmic Neighborhood</h2>
+            <p>Welcome to the interactive Solar System explorer. The Solar System is the gravitationally bound system of the Sun and the objects that orbit it. It formed 4.6 billion years ago from the gravitational collapse of a giant interstellar molecular cloud.</p>
+            <p>Click on any celestial body below to learn more about its fascinating characteristics!</p>
+        </section>
+
+        <section id="explorer">
+            <h2>🔭 Planet Explorer</h2>
+            <div class="grid" id="planetGrid">
+                <!-- Planets injected by JS -->
+            </div>
+        </section>
+
+        <section id="quiz">
+            <h2>🧠 Knowledge Check</h2>
+            <div class="quiz-container">
+                <div id="quizContent">
+                    <div class="question" id="questionText">Loading quiz...</div>
+                    <div class="options" id="optionsContainer">
+                        <!-- Options injected by JS -->
+                    </div>
+                </div>
+                <div id="quizResult" style="display: none; text-align: center;">
+                    <h3 style="font-size: 2rem; margin-bottom: 1rem;">Quiz Complete! 🎉</h3>
+                    <p class="score-display" id="finalScore">You scored X out of Y</p>
+                    <button class="next-btn" style="display: inline-block; margin-top: 1rem;" onclick="resetQuiz()">Restart Quiz</button>
+                </div>
+                <div class="quiz-footer" id="quizFooter">
+                    <span class="score-display" id="currentScore">Score: 0</span>
+                    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Next Question ➡️</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="planetModal">
+        <div class="modal">
+            <button class="close-btn" onclick="closeModal()">✕</button>
+            <div class="modal-header">
+                <div class="planet-icon" id="modalIcon" style="width: 100px; height: 100px;"></div>
+                <div>
+                    <h2 id="modalTitle" style="margin-bottom: 0.25rem;">Earth</h2>
+                    <span id="modalType" style="opacity: 0.8; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em; color: var(--primary-color); font-weight: bold;">Terrestrial Planet</span>
+                </div>
+            </div>
+            <p id="modalDesc">Our home planet is the only place we know of so far that's inhabited by living things.</p>
+            <div class="modal-stats">
+                <div class="stat-box">
+                    <div class="stat-label">Distance from Sun</div>
+                    <div class="stat-value" id="modalDistance">1 AU</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Radius</div>
+                    <div class="stat-value" id="modalRadius">3,958 mi</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Length of Year</div>
+                    <div class="stat-value" id="modalYear">365 Days</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Known Moons</div>
+                    <div class="stat-value" id="modalMoons">1</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Data ---
+        const planets = [
+            {
+                name: "Sun",
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="#facc15"/><path d="M50 5 L50 15 M50 85 L50 95 M5 50 L15 50 M85 50 L95 50 M25 25 L32 32 M75 75 L68 68 M25 75 L32 68 M75 25 L68 32" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/></svg>`,
+                type: "Yellow Dwarf Star",
+                desc: "The heart of our solar system. It is a yellow dwarf star, a hot ball of glowing gases, and its gravity holds the solar system together.",
+                distance: "0 AU",
+                radius: "432,690 mi",
+                year: "N/A",
+                moons: "0"
+            },
+            {
+                name: "Mercury",
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="25" fill="#9ca3af"/><circle cx="40" cy="40" r="4" fill="#6b7280"/><circle cx="60" cy="55" r="3" fill="#6b7280"/><circle cx="45" cy="65" r="5" fill="#6b7280"/></svg>`,
+                type: "Terrestrial Planet",
+                desc: "The smallest planet in our solar system and nearest to the Sun, Mercury is only slightly larger than Earth's Moon.",
+                distance: "0.4 AU",
+                radius: "1,516 mi",
+                year: "88 Days",
+                moons: "0"
+            },
+            {
+                name: "Venus",
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" fill="#fcd34d"/><path d="M20,50 Q40,30 80,50" stroke="#fbbf24" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M25,65 Q50,45 75,65" stroke="#fbbf24" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`,
+                type: "Terrestrial Planet",
+                desc: "Venus spins slowly in the opposite direction from most planets. A thick atmosphere makes it the hottest planet in our solar system.",
+                distance: "0.7 AU",
+                radius: "3,760 mi",
+                year: "225 Days",
+                moons: "0"
+            },
+            {
+                name: "Earth",
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="32" fill="#3b82f6"/><path d="M25,45 Q40,20 60,40 T70,65 Q50,80 30,60 Z" fill="#22c55e"/><path d="M65,25 Q80,30 75,45 Z" fill="#22c55e"/></svg>`,
+                type: "Terrestrial Planet",
+                desc: "Our home planet is the only place we know of so far that's inhabited by living things. It's the only planet with liquid water on the surface.",
+                distance: "1 AU",
+                radius: "3,958 mi",
+                year: "365.25 Days",
+                moons: "1"
+            },
+            {
+                name: "Mars",
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="28" fill="#ef4444"/><circle cx="45" cy="45" r="8" fill="#b91c1c" opacity="0.4"/><circle cx="65" cy="60" r="5" fill="#b91c1c" opacity="0.4"/><path d="M30,60 Q40,55 50,65" stroke="#b91c1c" stroke-width="3" fill="none" opacity="0.4"/></svg>`,
+                type: "Terrestrial Planet",
+                desc: "A dusty, cold, desert world with a very thin atmosphere. There is strong evidence Mars was—billions of years ago—wetter and warmer.",
+                distance: "1.5 AU",
+                radius: "2,106 mi",
+                year: "687 Days",
+                moons: "2"
+            },
+            {
+                name: "Jupiter",
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#fed7aa"/><path d="M12,35 L88,35 M6,50 L94,50 M12,65 L88,65" stroke="#fdba74" stroke-width="8" stroke-linecap="round"/><ellipse cx="65" cy="60" rx="10" ry="6" fill="#ea580c"/></svg>`,
+                type: "Gas Giant",
+                desc: "Jupiter is more than twice as massive than the other planets of our solar system combined. The Giant planet's Great Red Spot is a centuries-old storm bigger than Earth.",
+                distance: "5.2 AU",
+                radius: "43,441 mi",
+                year: "12 Years",
+                moons: "95"
+            },
+            {
+                name: "Saturn",
+                svg: `<svg viewBox="0 0 100 100"><g transform="rotate(-20 50 50)"><path d="M 5 50 A 45 15 0 0 1 95 50" fill="none" stroke="#cbd5e1" stroke-width="8"/><circle cx="50" cy="50" r="30" fill="#fde047"/><path d="M 5 50 A 45 15 0 0 0 95 50" fill="none" stroke="#94a3b8" stroke-width="8"/></g></svg>`,
+                type: "Gas Giant",
+                desc: "Adorned with a dazzling, complex system of icy rings, Saturn is unique in our solar system. The other giant planets have rings, but none are as spectacular.",
+                distance: "9.5 AU",
+                radius: "36,184 mi",
+                year: "29 Years",
+                moons: "146"
+            },
+            {
+                name: "Uranus",
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="#7dd3fc"/><ellipse cx="50" cy="50" rx="8" ry="45" fill="none" stroke="#bae6fd" stroke-width="3"/></svg>`,
+                type: "Ice Giant",
+                desc: "Uranus rotates at a nearly 90-degree angle from the plane of its orbit. This unique tilt makes Uranus appear to spin on its side.",
+                distance: "19.2 AU",
+                radius: "15,759 mi",
+                year: "84 Years",
+                moons: "28"
+            },
+            {
+                name: "Neptune",
+                svg: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="34" fill="#2563eb"/><path d="M25,40 Q50,55 75,40" stroke="#1d4ed8" stroke-width="5" fill="none" opacity="0.5"/><circle cx="60" cy="65" r="4" fill="#1e3a8a" opacity="0.6"/></svg>`,
+                type: "Ice Giant",
+                desc: "Neptune—the eighth and most distant major planet orbiting our Sun—is dark, cold and whipped by supersonic winds.",
+                distance: "30.1 AU",
+                radius: "15,299 mi",
+                year: "165 Years",
+                moons: "16"
+            }
+        ];
+
+        const quizQuestions = [
+            {
+                question: "Which planet is known as the 'Red Planet'?",
+                options: ["Venus", "Jupiter", "Mars", "Saturn"],
+                correct: 2
+            },
+            {
+                question: "Which is the largest planet in our solar system?",
+                options: ["Earth", "Saturn", "Jupiter", "Neptune"],
+                correct: 2
+            },
+            {
+                question: "How many known moons does Earth have?",
+                options: ["Zero", "One", "Two", "Four"],
+                correct: 1
+            },
+            {
+                question: "Which planet is famous for its spectacular rings?",
+                options: ["Uranus", "Jupiter", "Venus", "Saturn"],
+                correct: 3
+            },
+            {
+                question: "Which celestial body is at the center of our solar system?",
+                options: ["Earth", "The Sun", "Jupiter", "The Moon"],
+                correct: 1
+            }
+        ];
+
+        // --- Planet Explorer Logic ---
+        const grid = document.getElementById('planetGrid');
+        const visitedPlanets = new Set();
+        
+        function renderPlanets() {
+            grid.innerHTML = '';
+            planets.forEach((planet, index) => {
+                const card = document.createElement('div');
+                card.className = `card ${visitedPlanets.has(index) ? 'visited' : ''}`;
+                card.id = `planet-card-${index}`;
+                card.onclick = () => openModal(index);
+                card.innerHTML = `
+                    <div class="visited-badge">✓</div>
+                    <div class="planet-icon">${planet.svg}</div>
+                    <h3>${planet.name}</h3>
+                    <p style="font-size: 0.9rem; opacity: 0.7; margin:0;">${planet.type}</p>
+                `;
+                grid.appendChild(card);
+            });
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const progressText = document.getElementById('progressText');
+            const progressFill = document.getElementById('progressFill');
+            const completionMsg = document.getElementById('completionMessage');
+            
+            const total = planets.length;
+            const visited = visitedPlanets.size;
+            
+            progressText.innerText = `${visited} / ${total} Planets`;
+            progressFill.style.width = `${(visited / total) * 100}%`;
+            
+            if (visited === total) {
+                completionMsg.style.display = 'block';
+            }
+        }
+
+        const modal = document.getElementById('planetModal');
+        
+        function openModal(index) {
+            // Gamification Tracking
+            if (!visitedPlanets.has(index)) {
+                visitedPlanets.add(index);
+                const card = document.getElementById(`planet-card-${index}`);
+                if(card) card.classList.add('visited');
+                updateProgress();
+            }
+
+            const p = planets[index];
+            document.getElementById('modalIcon').innerHTML = p.svg;
+            document.getElementById('modalTitle').innerText = p.name;
+            document.getElementById('modalType').innerText = p.type;
+            document.getElementById('modalDesc').innerText = p.desc;
+            document.getElementById('modalDistance').innerText = p.distance;
+            document.getElementById('modalRadius').innerText = p.radius;
+            document.getElementById('modalYear').innerText = p.year;
+            document.getElementById('modalMoons').innerText = p.moons;
+            
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+
+        // --- Quiz Logic ---
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const nextBtn = document.getElementById('nextBtn');
+        const currentScoreEl = document.getElementById('currentScore');
+        
+        function loadQuestion() {
+            answered = false;
+            nextBtn.style.display = 'none';
+            const q = quizQuestions[currentQuestion];
+            questionText.innerText = `Question ${currentQuestion + 1} of ${quizQuestions.length}: ${q.question}`;
+            
+            optionsContainer.innerHTML = '';
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            
+            const q = quizQuestions[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            
+            if (selectedIndex === q.correct) {
+                btnElement.classList.add('correct');
+                score++;
+                currentScoreEl.innerText = `Score: ${score}`;
+            } else {
+                btnElement.classList.add('wrong');
+                allBtns[q.correct].classList.add('correct');
+            }
+            
+            allBtns.forEach(btn => btn.style.cursor = 'default');
+            
+            if (currentQuestion < quizQuestions.length - 1) {
+                nextBtn.innerText = 'Next Question ➡️';
+            } else {
+                nextBtn.innerText = 'See Results 🏆';
+            }
+            nextBtn.style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizQuestions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizContent').style.display = 'none';
+            document.getElementById('quizFooter').style.display = 'none';
+            document.getElementById('quizResult').style.display = 'block';
+            document.getElementById('finalScore').innerText = `You scored ${score} out of ${quizQuestions.length}!`;
+        }
+
+        function resetQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            currentScoreEl.innerText = `Score: 0`;
+            document.getElementById('quizContent').style.display = 'block';
+            document.getElementById('quizFooter').style.display = 'flex';
+            document.getElementById('quizResult').style.display = 'none';
+            loadQuestion();
+        }
+
+        // --- Theme Toggle Logic ---
+        const themeToggle = document.getElementById('themeToggle');
+        let isDark = false; // Changed default to light
+
+        themeToggle.addEventListener('click', () => {
+            isDark = !isDark;
+            if (isDark) {
+                document.body.setAttribute('data-theme', 'dark');
+                themeToggle.innerHTML = '<span>☀️ Light Mode</span>';
+            } else {
+                document.body.removeAttribute('data-theme');
+                themeToggle.innerHTML = '<span>🌙 Dark Mode</span>';
+            }
+        });
+
+        // Initialize App
+        renderPlanets();
+        loadQuestion();
+
+    </script>
+</body>
+</html>
